@@ -1,37 +1,20 @@
 # app.py
 from flask import Flask, render_template, request
+from joblib import load
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
 
 app = Flask(__name__)
 
-# =========================
-# 1. DATASET CONTOH & MODEL
-# =========================
-# Di real project, bagian ini sebaiknya diganti dengan dataset asli kampus
-# atau model yang sudah dilatih terpisah dan disimpan (joblib/pkl).
-
-# Dataset dummy sederhana
-data = pd.DataFrame({
-    "ipk":        [3.4, 2.5, 3.1, 2.2, 3.7, 2.8, 3.0, 2.4],
-    "sks_lulus":  [90,   72,  88,  60,  96,  70,  80,  65],
-    "presensi":   [92,   70,  85,  65,  94,  75,  80,  68],
-    "mengulang":  [0,    2,   1,   3,   0,   2,   1,   3],
-    # 1 = lulus tepat waktu, 0 = terlambat / berisiko
-    "lulus_tepat_waktu": [1, 0, 1, 0, 1, 0, 1, 0]
-})
-
-X = data[["ipk", "sks_lulus", "presensi", "mengulang"]]
-y = data["lulus_tepat_waktu"]
-
-# Training model RandomForest sederhana
-model = RandomForestClassifier(random_state=42)
-model.fit(X, y)
+# ==========================
+# 1. Load model yang sudah dilatih
+# ==========================
+# Pastikan file model_kelulusan.joblib ada di folder yang sama
+model = load("model_kelulusan.joblib")
 
 
-# =========================
-# 2. FUNGSI PREDIKSI
-# =========================
+# ==========================
+# 2. Fungsi logika prediksi
+# ==========================
 def prediksi_kelulusan(ipk, sks_lulus, presensi, mengulang):
     """
     Mengembalikan:
@@ -54,10 +37,7 @@ def prediksi_kelulusan(ipk, sks_lulus, presensi, mengulang):
     prob_percent = prob_lulus * 100
 
     # Label teks
-    if y_pred == 1:
-        label = "Lulus tepat waktu"
-    else:
-        label = "Berisiko terlambat"
+    label = "Lulus tepat waktu" if y_pred == 1 else "Berisiko terlambat"
 
     # Rekomendasi berdasarkan probabilitas
     if prob_percent >= 85:
@@ -78,9 +58,9 @@ def prediksi_kelulusan(ipk, sks_lulus, presensi, mengulang):
     return label, prob_percent, rekomendasi
 
 
-# =========================
-# 3. ROUTE WEB UTAMA
-# =========================
+# ==========================
+# 3. Route web utama
+# ==========================
 @app.route("/", methods=["GET", "POST"])
 def index():
     result = None  # default: belum ada hasil
@@ -97,11 +77,11 @@ def index():
             ipk, sks_lulus, presensi, mengulang
         )
 
-        # Data yang dikirim ke template
+        # Data yang dikirim ke template (index.html)
         result = {
             "label": label,
             "probabilitas": f"{prob_percent:.2f}%",
-            "prob_value": max(0, min(prob_percent, 100)),  # untuk lebar progress bar (0–100)
+            "prob_value": max(0, min(prob_percent, 100)),  # untuk lebar progress bar
             "rekomendasi": rekomendasi,
             # ringkasan input user
             "ipk": ipk,
@@ -113,9 +93,8 @@ def index():
     return render_template("index.html", result=result)
 
 
-# =========================
-# 4. RUN APP
-# =========================
+# ==========================
+# 4. Run app
+# ==========================
 if __name__ == "__main__":
-    # Untuk production, ganti debug=False
     app.run(debug=True)
