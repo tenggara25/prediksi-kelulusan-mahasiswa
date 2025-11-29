@@ -64,6 +64,7 @@ def prediksi_kelulusan(ipk, sks_lulus, presensi, mengulang):
 @app.route("/", methods=["GET", "POST"])
 def index():
     result = None  # default: belum ada hasil
+<<<<<<< HEAD
     error = None
 
     if request.method == "POST":
@@ -118,6 +119,35 @@ def index():
             result = None
 
     return render_template("index.html", result=result, error=error)
+=======
+
+    if request.method == "POST":
+        # Ambil data dari form
+        ipk = float(request.form["ipk"])
+        sks_lulus = int(request.form["sks_lulus"])
+        presensi = int(request.form["presensi"])
+        mengulang = int(request.form["mengulang"])
+
+        # Panggil fungsi prediksi
+        label, prob_percent, rekomendasi = prediksi_kelulusan(
+            ipk, sks_lulus, presensi, mengulang
+        )
+
+        # Data yang dikirim ke template (index.html)
+        result = {
+            "label": label,
+            "probabilitas": f"{prob_percent:.2f}%",
+            "prob_value": max(0, min(prob_percent, 100)),  # untuk lebar progress bar
+            "rekomendasi": rekomendasi,
+            # ringkasan input user
+            "ipk": ipk,
+            "sks_lulus": sks_lulus,
+            "presensi": presensi,
+            "mengulang": mengulang,
+        }
+
+    return render_template("index.html", result=result)
+>>>>>>> f38fa91a10de3848268aa78fed15d7186b36da59
 
 
 # ==========================
